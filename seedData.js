@@ -390,13 +390,20 @@ async function seedDatabase() {
       useUnifiedTopology: true
     });
 
+    console.log('Connected to MongoDB');
+
     // Clear existing data
     await Station.deleteMany({});
+    console.log('Cleared existing data');
+
+    // Ensure text index exists
+    await Station.collection.createIndex({ services: 'text' });
+    console.log('Created text index on services field');
 
     // Insert new data
     await Station.insertMany(stationsData);
-
     console.log('Database seeded successfully');
+
     process.exit(0);
   } catch (error) {
     console.error('Error seeding database:', error);

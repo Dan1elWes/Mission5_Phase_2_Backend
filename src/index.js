@@ -28,15 +28,66 @@ const fuelStationSchema = new mongoose.Schema({
   lat: { type: Number, required: true },
   lng: { type: Number, required: true },
   prices: {
-    type: Map,
-    of: Number,
-    required: true,
+    'ZX premium': { type: Number },
+    'Z91 unleaded': { type: Number },
+    'Z diesel': { type: Number },
+    'EV charging': { type: Number }
   },
+  services: { type: String },
+  types: [{ type: String }],
+  stationTypes: [{ type: String }],
+  street: { type: String },
+  locality: { type: String },
+  country: { type: String }
 });
 
+// Create text index on services field
+fuelStationSchema.index({ services: 'text' });
 
 // Create a Mongoose model from the schema
 const FuelStation = mongoose.model("FuelStation", fuelStationSchema,"locations");
+
+// Filter stations endpoint
+app.get("/api/stations", async (req, res) => {
+  try {
+    const { services, fuels, stationTypes } = req.query;
+
+    // Start with a base query
+    let query = {};
+
+    // Add services filter if present
+    if (services) {
+      const serviceList = services.split(',');
+      // Create a text search query that matches any of the services
+      query.$text = { 
+        $search: serviceList.map(service => `"${service.trim()}"`).join(' ') 
+      };
+    }
+
+    // Add fuel types filter if present
+    if (fuels) {
+      const fuelList = fuels.split(',');
+      query.types = {
+        $in: fuelList
+      };
+    }
+
+    // Add station types filter if present
+    if (stationTypes) {
+      const typesList = stationTypes.split(',');
+      query.stationTypes = {
+        $in: typesList
+      };
+    }
+
+    // Find stations matching the query
+    const stations = await FuelStation.find(query);
+    res.json(stations);
+  } catch (err) {
+    console.error('Error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
 
 app.get("/fuelstations", async (req, res) => {
   try {
