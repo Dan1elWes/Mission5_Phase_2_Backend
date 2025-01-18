@@ -1,6 +1,6 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
-const Station = require('./models/Station');
+const Station = require('./src/models/Station');
 
 const stationsData = [
   {
